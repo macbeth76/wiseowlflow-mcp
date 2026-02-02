@@ -1,0 +1,46 @@
+name: "PR Notification Workflow"
+description: "Summarize PR changes and send a Slack notification"
+
+trigger:
+  type: webhook
+  path: /webhooks/github
+  method: POST
+
+steps:
+  - id: get_diff
+    name: "Get PR Diff"
+    type: MCP_TOOL
+    config:
+      server: github-mcp
+      tool: get_pr_diff
+      arguments:
+        url: "${inputs.pr_url}"
+
+  - id: summarize
+    name: "AI Summarize"
+    type: AI_DECISION
+    config:
+      prompt: |
+        Summarize this pull request diff in 2-3 sentences. Focus on:
+        - What changed
+        - Why it might have changed
+        - Any potential concerns
+
+        Diff:
+        ${steps.get_diff.output}
+      outputFormat: TEXT
+      temperature: 0.5
+      maxTokens: 500
+
+  - id: notify
+    name: "Send Slack Notification"
+    type: MCP_TOOL
+    config:
+      server: slack-mcp
+      tool: send_message
+      arguments:
+        channel: "#code-reviews"
+        text: |
+          🔍 *New PR Review Summary*
+          *PR:* ${inputs.pr_url}
+          *Summary:* ${steps.summarize.output}

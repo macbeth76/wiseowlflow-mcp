@@ -1,0 +1,38 @@
+# Render Blueprint for WiseOwlFlow MCP Server
+services:
+  - type: web
+    name: wiseowlflow-mcp
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: wiseowlflow-db
+          property: connectionString
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ISSUER
+        value: wiseowlflow.com
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: OLLAMA_BASE_URL
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true
+
+databases:
+  - name: wiseowlflow-db
+    databaseName: wiseowlflow
+    plan: free

@@ -1,0 +1,65 @@
+{
+  "name": "Daily Digest Workflow",
+  "description": "Aggregate daily updates from multiple sources and send a digest",
+  "trigger": {
+    "type": "schedule",
+    "cron": "0 9 * * *",
+    "timezone": "America/New_York"
+  },
+  "steps": [
+    {
+      "id": "fetch_github",
+      "name": "Fetch GitHub Activity",
+      "type": "MCP_TOOL",
+      "config": {
+        "server": "github-mcp",
+        "tool": "list_notifications",
+        "arguments": {
+          "since": "${variables.yesterday}"
+        }
+      }
+    },
+    {
+      "id": "fetch_calendar",
+      "name": "Fetch Calendar Events",
+      "type": "MCP_TOOL",
+      "config": {
+        "server": "calendar-mcp",
+        "tool": "list_events",
+        "arguments": {
+          "date": "${variables.today}"
+        }
+      }
+    },
+    {
+      "id": "compile_digest",
+      "name": "AI Compile Digest",
+      "type": "AI_DECISION",
+      "config": {
+        "prompt": "Create a brief daily digest email from this information:\n\nGitHub Activity:\n${steps.fetch_github.output}\n\nToday's Calendar:\n${steps.fetch_calendar.output}\n\nFormat it as a friendly morning briefing.",
+        "outputFormat": "TEXT",
+        "temperature": 0.7,
+        "maxTokens": 1000
+      }
+    },
+    {
+      "id": "send_email",
+      "name": "Send Digest Email",
+      "type": "MCP_TOOL",
+      "config": {
+        "server": "email-mcp",
+        "tool": "send_email",
+        "arguments": {
+          "to": "${variables.user_email}",
+          "subject": "Your Daily Digest - ${variables.today}",
+          "body": "${steps.compile_digest.output}"
+        }
+      }
+    }
+  ],
+  "variables": {
+    "today": "2024-01-15",
+    "yesterday": "2024-01-14",
+    "user_email": "user@example.com"
+  }
+}
